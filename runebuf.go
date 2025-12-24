@@ -525,18 +525,23 @@ func (r *RuneBuffer) getBackspaceSequence() []byte {
 
 		sep[i] = true
 	}
+
 	var buf []byte
 	for i := len(r.buf); i > r.idx; i-- {
-		// move input to the left of one
-		buf = append(buf, '\b')
 		if sep[i] {
-			// up one line, go to the start of the line and move cursor right to the end (r.width)
-			buf = append(buf, "\033[A\r"+"\033["+strconv.Itoa(r.width)+"C"...)
+			// At a line wrap point: moving from position i to i-1 crosses a line boundary
+			// Don't use \b here as its behavior at line start is undefined in some terminals
+			// Use ANSI escape sequences instead:
+			// - \033[A = move cursor up one line
+			// - \r = move to start of line
+			// - \033[nC = move cursor right n columns
+			buf = append(buf, "\033[A\r"+"\033["+strconv.Itoa(r.width-1)+"C"...)
+		} else {
+			buf = append(buf, '\b')
 		}
 	}
 
 	return buf
-
 }
 
 func (r *RuneBuffer) Reset() []rune {
@@ -627,3 +632,4 @@ func (r *RuneBuffer) cleanWithIdxLine(idxLine int) {
 	r.hadClean = true
 	r.cleanOutput(r.w, idxLine)
 }
+
