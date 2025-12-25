@@ -152,6 +152,7 @@ func (t *Terminal) ioloop() {
 		}
 
 		if r == 0 {
+			expectNextChar = true
 			continue
 		}
 
